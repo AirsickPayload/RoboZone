@@ -9,8 +9,7 @@ session_start();
 if(isset($_GET['akcja']) && $_GET['akcja']=='wyloguj'){
 	unset($_SESSION['zalogowany']);
 }
-$link = mysql_connect("mysql.cba.pl","roboze","picode");
-mysql_select_db("robozone_cba_pl");
+db_connect();
 
 if(isset($_SESSION['zalogowany'])) {
 echo "Witaj, ".$_SESSION['login']; ?>
@@ -25,13 +24,13 @@ if(isset($_POST['wyslij'])) {
    FROM Users WHERE login = '".$_POST['login']."' 
    && haslo = '".codepass($_POST['haslo'])."' ")) > 0) { */
 
-   if(mysql_num_rows(mysql_query("SELECT login
-   FROM Users WHERE login = '".$_POST['login']."' ")) > 0) {//Sprawdzamy czy podany użytkownik istnieje w bazie danych
+   if(mysql_num_rows(mysql_query("SELECT `login`
+   FROM `Users` WHERE `login` = '".$_POST['login']."' ")) > 0) {//Sprawdzamy czy podany użytkownik istnieje w bazie danych
 
 
-       if(mysql_num_rows(mysql_query("SELECT user_id FROM Users
-       WHERE login = '".$_POST['login']."' 
-       && haslo = '".codepass($_POST['haslo'])."' ")) > 0 ) {//sprawdzamy czy hasło do podanego użytkownika jest poprawne
+       if(mysql_num_rows(mysql_query("SELECT `user_id` FROM `Users`
+       WHERE `login` = '".$_POST['login']."' 
+       && pass = '".codepass($_POST['haslo'])."' ")) > 0 ) {//sprawdzamy czy hasło do podanego użytkownika jest poprawne
 
 
            $_SESSION['zalogowany'] = true;

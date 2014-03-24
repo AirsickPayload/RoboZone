@@ -41,7 +41,7 @@ if(!$_SESSION['logged']) {
             echo '<p>Podany email jest nieprawidłowy.</p>';
         } else {
             // sprawdzamy czy są jacyś użytkownicy z takim loginem lub adresem email
-            $result = mysql_query("SELECT Count(nr) FROM `Users` WHERE `login` = '{$_POST['login']}' OR `e-mail` = '{$_POST['email']}'");
+            $result = mysql_query("SELECT Count(`user_id`) FROM `Users` WHERE `login` = '{$_POST['login']}' OR `address` = '{$_POST['email']}'");
             $row = mysql_fetch_row($result);
             if($row[0] > 0) {
                 echo '<p>Już istnieje użytkownik z takim loginem lub adresem e-mail.</p>';
@@ -49,7 +49,7 @@ if(!$_SESSION['logged']) {
                 // jeśli nie istnieje to kodujemy haslo...
                 $_POST['password'] = codepass($_POST['password']);
                 // i wykonujemy zapytanie na dodanie usera
-                mysql_query("INSERT INTO `Users` (`name`, `lastname`,`login`,'pass','address',`university`) VALUES ('{$_POST['imie']}', '{$_POST['nazwisko']}', '{$_POST['login']}', '{$_POST['password']}', '{$_POST['email']}', '{$_POST['uczelnia']}')");
+                mysql_query("INSERT INTO `Users` (`name`, `lastname`,`login`,`pass`,`address`,`university`) VALUES ('{$_POST['imie']}', '{$_POST['nazwisko']}', '{$_POST['login']}', '{$_POST['password']}', '{$_POST['email']}', '{$_POST['uczelnia']}')");
                 echo '<p>Zostałeś poprawnie zarejestrowany! Możesz się teraz <a href="logowanie.php">zalogować</a>. Przeglądarka przekieruje automatycznie za 5 sekund.</p>';
 				?><meta http-equiv="refresh" content="5; URL=form_log.html"><?php
 			}
