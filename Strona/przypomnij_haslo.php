@@ -81,7 +81,7 @@ if (isset($_POST['zatwierdz'])) {
   		error('Email nie jest poprawny musi mieć format: nazwa@domena.dnp');
 	}
     // Sprawdza czy e-mail istnieje	
-    $sql = "SELECT COUNT(*) FROM `uzytkownicy` WHERE `e-mail` = '$podanyemail'";
+    $sql = "SELECT COUNT(*) FROM `Users` WHERE `address` = '$podanyemail'";
     $result = mysql_query($sql);//or die('Nie mogę odnaleźć takiego użytkownika: ' . mysql_error());
     if (!mysql_result($result,0,0)>0) {
         error('Podany adres e-mail nie został odnaleziony!');
@@ -97,8 +97,8 @@ if (isset($_POST['zatwierdz'])) {
 	$newpassword = codepass($emailhaslo);
 	
         // Bezpieczne zapytanie (uwaga na sql injection)
-       	$query = sprintf("UPDATE `uzytkownicy` SET `haslo` = '%s' 
-						  WHERE `e-mail` = '$podanyemail'",
+       	$query = sprintf("UPDATE `Users` SET `pass` = '%s' 
+						  WHERE `address` = '$podanyemail'",
                     mysql_real_escape_string($newpassword));
 					
 					mysql_query($query)or die('Nie mogę odnaleźć takiego użytkownika: ' . mysql_error());

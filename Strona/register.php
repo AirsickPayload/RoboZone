@@ -41,7 +41,7 @@ if(!$_SESSION['logged']) {
             echo '<p>Podany email jest nieprawidłowy.</p>';
         } else {
             // sprawdzamy czy są jacyś użytkownicy z takim loginem lub adresem email
-            $result = mysql_query("SELECT Count(nr) FROM `uzytkownicy` WHERE `login` = '{$_POST['login']}' OR `e-mail` = '{$_POST['email']}'");
+            $result = mysql_query("SELECT Count(nr) FROM `Users` WHERE `login` = '{$_POST['login']}' OR `e-mail` = '{$_POST['email']}'");
             $row = mysql_fetch_row($result);
             if($row[0] > 0) {
                 echo '<p>Już istnieje użytkownik z takim loginem lub adresem e-mail.</p>';
@@ -49,10 +49,7 @@ if(!$_SESSION['logged']) {
                 // jeśli nie istnieje to kodujemy haslo...
                 $_POST['password'] = codepass($_POST['password']);
                 // i wykonujemy zapytanie na dodanie usera
-				$c_max = mysql_query("SELECT max(nr) FROM uzytkownicy");
-				$max_nr=mysql_fetch_row($c_max);
-				$new_nr=$max_nr[0] + 1;//chcemy aby kazdy nowy uzytkownik miał nr o jeden wiekszy niz największy obecnie przechowywany w tabeli konta
-                mysql_query("INSERT INTO `uzytkownicy` (`nr`, `imie`, `nazwisko`, `login`, `haslo`, `e-mail`, `uczelnia`) VALUES ('$new_nr', '{$_POST['imie']}', '{$_POST['nazwisko']}', '{$_POST['login']}', '{$_POST['password']}', '{$_POST['email']}', '{$_POST['uczelnia']}')");
+                mysql_query("INSERT INTO `Users` (`name`, `lastname`,`login`,'pass','address',`university`) VALUES ('{$_POST['imie']}', '{$_POST['nazwisko']}', '{$_POST['login']}', '{$_POST['password']}', '{$_POST['email']}', '{$_POST['uczelnia']}')");
                 echo '<p>Zostałeś poprawnie zarejestrowany! Możesz się teraz <a href="logowanie.php">zalogować</a>. Przeglądarka przekieruje automatycznie za 5 sekund.</p>';
 				?><meta http-equiv="refresh" content="5; URL=form_log.html"><?php
 			}
