@@ -8,6 +8,7 @@
 #include <netinet/in.h>
 #include <sys/wait.h>
 #include <sys/stat.h>
+#include <arpa/inet.h>
 
 void error(const char *msg)
 {
