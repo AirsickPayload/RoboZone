@@ -15,6 +15,7 @@ create table Scripts
 	u_id INT NOT NULL,
 	name VARCHAR(255) NOT NULL,
 	script_data BLOB NOT NULL,
+	script_size INT NOT NULL,
 	upload_date DATETIME NOT NULL,
 	FOREIGN KEY(u_id) REFERENCES Users(user_id)
 );
