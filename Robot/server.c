@@ -10,10 +10,8 @@
 #include <time.h>
 #include <sys/stat.h>
 #include <arpa/inet.h>
-<<<<<<< HEAD
 #include <mysql/mysql.h>
-=======
->>>>>>> FETCH_HEAD
+
 
 void error(const char *msg)
 {
