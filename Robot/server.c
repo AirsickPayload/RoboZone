@@ -3,11 +3,14 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <sys/types.h> 
+#include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <sys/wait.h>
+#include <time.h>
 #include <sys/stat.h>
+#include <arpa/inet.h>
+#include <mysql/mysql.h>
 
 void error(const char *msg)
 {
@@ -19,7 +22,7 @@ int main(int argc, char *argv[])
 {
      int sockfd, newsockfd, portno;
      socklen_t clilen;
-     char buffer[256];
+     char buffer[1024];
      struct sockaddr_in serv_addr, cli_addr;
      int n;
      if (argc < 2) {
@@ -82,30 +85,89 @@ while(1)
 
 
      // This send() function sends the 13 bytes of the string to the new socket
-     send(newsockfd, "Hello, world!\n", 13, 0);
+     //send(newsockfd, "Hello, world!\n", 13, 0);
 
      bzero(buffer,256);
+    
+     int script_id;
+     int user_id;
+    
+     n = read(newsockfd,&script_id, sizeof(int));
+     if (n < 0) error("ERROR reading from socket // scriptid");
+     printf("SCRIPT ID: %d\n", script_id);
+    
+     n = read(newsockfd,&user_id, sizeof(int));
+     if (n < 0) error("ERROR reading from socket // userid");
+     printf("USER ID: %d\n", user_id);
+    
+     char nazwaP[2048];
+     memset(nazwaP, 0, 2048);
+    
+     n = read(newsockfd,nazwaP, sizeof(nazwaP));
+     if (n < 0) error("ERROR reading from socket // name");
+     printf("PLIK: %s\n", nazwaP);
 
-     n = read(newsockfd,buffer,255);
-     if (n < 0) error("ERROR reading from socket");
-     printf("Here is the message: %s\n",buffer);
-
-     char polecenie[256];
-     memset(polecenie,0,256);
-
-     sprintf(polecenie,"./%s", buffer);
+     char polecenie[2048];
+     memset(polecenie,0, 2048);
+     sprintf(polecenie,"./%s", nazwaP);
+     printf("POLECENIE: %s\n", polecenie);
 
      pid_t child_pid;
      int status;
 
      if( (child_pid=fork()) == 0 ){
-     	execlp("sudo", "sudo", polecenie, NULL);
+         char script_id_str[12];
+         sprintf(script_id_str, "%d", script_id);
+         execlp(polecenie, polecenie, script_id_str , NULL);
      }
 	else{
 		waitpid(child_pid,&status,0);
+        
+        MYSQL *conn;
+        MYSQL_RES *res;
+        MYSQL_ROW row;
+        conn = mysql_init(NULL);
+        //PRZEDOSTATNI PARAMETR DO ZMIANY NA NULL PODCZAS ODPALANIA POZA LOCALHOSTEM ALANA
+        if (!mysql_real_connect(conn, "localhost",
+                                "root", "root", "robozone", 0, "/Applications/MAMP/tmp/mysql/mysql.sock", 0)) {
+            fprintf(stderr, "%s\n", mysql_error(conn));
+            exit(1);
+        }
+        
+        time_t t = time(0);
+        struct tm *now = localtime(&t);
+        
+        char datetime[19];
+        
+        sprintf(datetime, "%d-%d-%d %d:%d:%d", now->tm_year+1900, now->tm_mon+1, now->tm_mday, now->tm_hour, now->tm_min, now->tm_sec);
+        
+        char queryString[2048];
+        
+        FILE *file;
+        char filename[128];
+        char filebuffer[1024];
+        sprintf(filename, "%d.txt", script_id);
+        file = fopen(filename, "rt");
+        
+        if(file){
+            n = fread(filebuffer,1, sizeof(filebuffer), file);
+            if(n < 0) { error("ERROR reading from file"); }
+        }
+    
+        fclose(file);
+        
+        sprintf(queryString, "INSERT INTO `History`(`u_id`, `s_id`, `exec_date`, `log`) VALUES('%d', '%d', '%s', '%s')", user_id, script_id, datetime, filebuffer);
+        
+        if (mysql_query(conn, queryString)) {
+            fprintf(stderr, "%s\n", mysql_error(conn));
+            exit(1);
+        }
+        mysql_close(conn);
+        
+        printf("ZAKONCZONO OBSLUGE: %s",inet_ntoa(cli_addr.sin_addr));
+        close(newsockfd);
 	}
 
-     close(newsockfd);
 }
 close(sockfd);
      return 0; 
