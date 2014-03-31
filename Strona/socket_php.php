@@ -1,7 +1,7 @@
 <?php
 
 $socket = socket_create(AF_INET, SOCK_STREAM, SOL_TCP);
-$address = gethostbyname('robozone.no-ip.biz');
+$address = gethostbyname('localhost');
 $service_port=20001;
 
 if ($socket === false) {
@@ -18,10 +18,13 @@ if ($result === false) {
     echo "OK.\n";
 }
 
-$in='string testowy';
+$s_id = pack("l", 5);
+$u_id = pack("l", 1);
 
-socket_write($socket, $in, strlen($in));
-
+$filename = "example.py";
+socket_write($socket, $s_id);
+socket_write($socket, $u_id);
+socket_write($socket, $filename, strlen($filename));
 socket_close($socket);
 
 ?>
