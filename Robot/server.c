@@ -12,7 +12,6 @@
 #include <arpa/inet.h>
 #include <mysql/mysql.h>
 
-
 void error(const char *msg)
 {
     perror(msg);
@@ -108,6 +107,56 @@ while(1)
      if (n < 0) error("ERROR reading from socket // name");
      printf("PLIK: %s\n", nazwaP);
 
+    
+    MYSQL *conn;
+    MYSQL_RES *res;
+    MYSQL_ROW row;
+    FILE *file;
+    conn = mysql_init(NULL);
+    //PRZEDOSTATNI PARAMETR DO ZMIANY NA NULL PODCZAS ODPALANIA POZA LOCALHOSTEM ALANA
+    if (!mysql_real_connect(conn, "localhost",
+                            "root", "root", "robozone", 0, "/Applications/MAMP/tmp/mysql/mysql.sock", 0)) {
+        fprintf(stderr, "%s\n", mysql_error(conn));
+        exit(1);
+    }
+
+    char queryString[2048];
+    char filename[256];
+    memset(queryString, 0, 2048);
+    memset(filename,0, 256);
+    
+    sprintf(queryString, "SELECT `script_data`, `script_size` FROM `Scripts` where `script_id` =  '%d';", script_id);
+    
+    if (mysql_query(conn, queryString)) {
+        fprintf(stderr, "BLAD PODCZAS SELECT: %s\n", mysql_error(conn));
+        exit(1);
+    }
+    
+    printf("Polaczono po raz pierwszy z baza\n");
+    
+    res = mysql_store_result(conn);
+    
+    row = mysql_fetch_row(res);
+    
+    file = fopen(nazwaP, "wb");
+    
+    unsigned long *lengths = mysql_fetch_lengths(res);
+
+    fwrite(row[0], lengths[0], 1, file);
+    
+    if (ferror(file))
+    {
+        fprintf(stderr, "fwrite() failed\n");
+        mysql_free_result(res);
+        mysql_close(conn);
+        
+        exit(1);
+    }
+    
+    chmod(nazwaP, S_IRWXU|S_IRGRP|S_IXGRP|S_IROTH);
+    fclose(file);
+    mysql_close(conn);
+    
      char polecenie[2048];
      memset(polecenie,0, 2048);
      sprintf(polecenie,"./%s", nazwaP);
@@ -123,53 +172,52 @@ while(1)
      }
 	else{
 		waitpid(child_pid,&status,0);
-        
-        MYSQL *conn;
-        MYSQL_RES *res;
-        MYSQL_ROW row;
-        conn = mysql_init(NULL);
-        //PRZEDOSTATNI PARAMETR DO ZMIANY NA NULL PODCZAS ODPALANIA POZA LOCALHOSTEM ALANA
-        if (!mysql_real_connect(conn, "localhost",
-                                "root", "root", "robozone", 0, "/Applications/MAMP/tmp/mysql/mysql.sock", 0)) {
-            fprintf(stderr, "%s\n", mysql_error(conn));
-            exit(1);
-        }
-        
-        time_t t = time(0);
-        struct tm *now = localtime(&t);
-        
-        char datetime[19];
-        
-        sprintf(datetime, "%d-%d-%d %d:%d:%d", now->tm_year+1900, now->tm_mon+1, now->tm_mday, now->tm_hour, now->tm_min, now->tm_sec);
-        
-        char queryString[2048];
-        
-        FILE *file;
-        char filename[128];
-        char filebuffer[1024];
-        sprintf(filename, "%d.txt", script_id);
-        file = fopen(filename, "rt");
-        
-        if(file){
-            n = fread(filebuffer,1, sizeof(filebuffer), file);
-            if(n < 0) { error("ERROR reading from file"); }
-        }
+ 	}
     
-        fclose(file);
-        
-        sprintf(queryString, "INSERT INTO `History`(`u_id`, `s_id`, `exec_date`, `log`) VALUES('%d', '%d', '%s', '%s')", user_id, script_id, datetime, filebuffer);
-        
-        if (mysql_query(conn, queryString)) {
-            fprintf(stderr, "%s\n", mysql_error(conn));
-            exit(1);
-        }
-        mysql_close(conn);
-        
-        printf("ZAKONCZONO OBSLUGE: %s",inet_ntoa(cli_addr.sin_addr));
-        close(newsockfd);
-	}
+    conn = mysql_init(NULL);
+    //PRZEDOSTATNI PARAMETR DO ZMIANY NA NULL PODCZAS ODPALANIA POZA LOCALHOSTEM ALANA
+    if (!mysql_real_connect(conn, "localhost",
+                            "root", "root", "robozone", 0, "/Applications/MAMP/tmp/mysql/mysql.sock", 0)) {
+        fprintf(stderr, "%s\n", mysql_error(conn));
+        exit(1);
+    }
+    printf("Polaczono po raz drugi z baza\n");
+    time_t t = time(0);
+    struct tm *now = localtime(&t);
+    
+    char datetime[19];
+    
+    sprintf(datetime, "%d-%d-%d %d:%d:%d", now->tm_year+1900, now->tm_mon+1, now->tm_mday, now->tm_hour, now->tm_min, now->tm_sec);
+    
+    
+    char filebuffer[1024];
+    memset(filename,0, 256);
+    sprintf(filename, "%d.txt", script_id);
+    file = fopen(filename, "rt");
+    
+    if(file){
+        n = fread(filebuffer,1, sizeof(filebuffer), file);
+        if(n < 0) { error("ERROR reading from file"); }
+    }
+    
+    fclose(file);
+    
+    memset(queryString, 0, 2048);
+    
+    sprintf(queryString, "INSERT INTO `History`(`u_id`, `s_id`, `exec_date`, `log`) VALUES('%d', '%d', '%s', '%s')", user_id, script_id, datetime, filebuffer);
+    
+    if (mysql_query(conn, queryString)) {
+        fprintf(stderr, "BLAD PODCZAS INSERT: %s\n", mysql_error(conn));
+        exit(1);
+    }
+    mysql_close(conn);
+    
+    close(newsockfd);
+    
+    printf("ZAKONCZONO OBSLUGE: %s\n",inet_ntoa(cli_addr.sin_addr));
+
 
 }
 close(sockfd);
-     return 0; 
+     return 0;
 }
