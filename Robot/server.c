@@ -105,7 +105,7 @@ while(1)
     
      n = read(newsockfd,nazwaP, sizeof(nazwaP));
      if (n < 0) error("ERROR reading from socket // name");
-     printf("PLIK: %s\n", nazwaP);
+     printf("NAZWA PLIKU: %s\n", nazwaP);
 
     
     MYSQL *conn;
@@ -122,6 +122,7 @@ while(1)
 
     char queryString[2048];
     char filename[256];
+    
     memset(queryString, 0, 2048);
     memset(filename,0, 256);
     
@@ -142,20 +143,22 @@ while(1)
     
     unsigned long *lengths = mysql_fetch_lengths(res);
 
-    fwrite(row[0], lengths[0], 1, file);
+    n = fwrite(row[0], lengths[0], 1, file);
     
     if (ferror(file))
     {
-        fprintf(stderr, "fwrite() failed\n");
+        fprintf(stderr, "ERROR writing to file\n");
         mysql_free_result(res);
         mysql_close(conn);
         
         exit(1);
     }
     
+    mysql_close(conn);
+    printf("ZAPISANO DANE DO PLIKU: %s\n", nazwaP);
+
     chmod(nazwaP, S_IRWXU|S_IRGRP|S_IXGRP|S_IROTH);
     fclose(file);
-    mysql_close(conn);
     
      char polecenie[2048];
      memset(polecenie,0, 2048);
@@ -188,7 +191,6 @@ while(1)
     char datetime[19];
     
     sprintf(datetime, "%d-%d-%d %d:%d:%d", now->tm_year+1900, now->tm_mon+1, now->tm_mday, now->tm_hour, now->tm_min, now->tm_sec);
-    
     
     char filebuffer[1024];
     memset(filename,0, 256);
