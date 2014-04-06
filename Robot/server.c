@@ -20,206 +20,211 @@ void error(const char *msg)
 
 int main(int argc, char *argv[])
 {
-     int sockfd, newsockfd, portno;
-     socklen_t clilen;
-     char buffer[1024];
-     struct sockaddr_in serv_addr, cli_addr;
-     int n;
-     if (argc < 2) {
-         fprintf(stderr,"ERROR, no port provided\n");
-         exit(1);
-     }
-     // create a socket
-     // socket(int domain, int type, int protocol)
-     sockfd =  socket(AF_INET, SOCK_STREAM, 0);
-     if (sockfd < 0) 
+    int sockfd, newsockfd, portno;
+    socklen_t clilen;
+    char buffer[1024];
+    struct sockaddr_in serv_addr, cli_addr;
+    int n;
+    if (argc < 2) {
+        fprintf(stderr,"ERROR, no port provided\n");
+        exit(1);
+    }
+    // create a socket
+    // socket(int domain, int type, int protocol)
+    sockfd =  socket(AF_INET, SOCK_STREAM, 0);
+    if (sockfd < 0)
         error("ERROR opening socket");
-
-     // clear address structure
-     bzero((char *) &serv_addr, sizeof(serv_addr));
-
-     portno = atoi(argv[1]);
-
-     /* setup the host_addr structure for use in bind call */
-     // server byte order
-     serv_addr.sin_family = AF_INET;  
-
-     // automatically be filled with current host's IP address
-     serv_addr.sin_addr.s_addr = INADDR_ANY;  
-
-     // convert short integer value for port must be converted into network byte order
-     serv_addr.sin_port = htons(portno);
-
-     // bind(int fd, struct sockaddr *local_addr, socklen_t addr_length)
-     // bind() passes file descriptor, the address structure, 
-     // and the length of the address structure
-     // This bind() call will bind  the socket to the current IP address on port, portno
-     if (bind(sockfd, (struct sockaddr *) &serv_addr,
-              sizeof(serv_addr)) < 0) 
-              error("ERROR on binding");
-
-     // This listen() call tells the socket to listen to the incoming connections.
-     // The listen() function places all incoming connection into a backlog queue
-     // until accept() call accepts the connection.
-     // Here, we set the maximum size for the backlog queue to 5.
-     listen(sockfd,5);
-
-     // The accept() call actually accepts an incoming connection
-     clilen = sizeof(cli_addr);
-
-     // This accept() function will write the connecting client's address info 
-     // into the the address structure and the size of that structure is clilen.
-     // The accept() returns a new socket file descriptor for the accepted connection.
-     // So, the original socket file descriptor can continue to be used 
-     // for accepting new connections while the new socker file descriptor is used for
-     // communicating with the connected client.
-while(1)
-{
-     newsockfd = accept(sockfd, 
-                 (struct sockaddr *) &cli_addr, &clilen);
-     if (newsockfd < 0) 
-          error("ERROR on accept");
-
-     printf("server: got connection from %s port %d\n",
-            inet_ntoa(cli_addr.sin_addr), ntohs(cli_addr.sin_port));
-
-
-     // This send() function sends the 13 bytes of the string to the new socket
-     //send(newsockfd, "Hello, world!\n", 13, 0);
-
-     bzero(buffer,256);
     
-     int script_id;
-     int user_id;
+    // clear address structure
+    bzero((char *) &serv_addr, sizeof(serv_addr));
     
-     n = read(newsockfd,&script_id, sizeof(int));
-     if (n < 0) error("ERROR reading from socket // scriptid");
-     printf("SCRIPT ID: %d\n", script_id);
+    portno = atoi(argv[1]);
     
-     n = read(newsockfd,&user_id, sizeof(int));
-     if (n < 0) error("ERROR reading from socket // userid");
-     printf("USER ID: %d\n", user_id);
+    /* setup the host_addr structure for use in bind call */
+    // server byte order
+    serv_addr.sin_family = AF_INET;
     
-     char nazwaP[2048];
-     memset(nazwaP, 0, 2048);
+    // automatically be filled with current host's IP address
+    serv_addr.sin_addr.s_addr = INADDR_ANY;
     
-     n = read(newsockfd,nazwaP, sizeof(nazwaP));
-     if (n < 0) error("ERROR reading from socket // name");
-     printf("NAZWA PLIKU: %s\n", nazwaP);
-
+    // convert short integer value for port must be converted into network byte order
+    serv_addr.sin_port = htons(portno);
     
-    MYSQL *conn;
-    MYSQL_RES *res;
-    MYSQL_ROW row;
-    FILE *file;
-    conn = mysql_init(NULL);
-    //PRZEDOSTATNI PARAMETR DO ZMIANY NA NULL PODCZAS ODPALANIA POZA LOCALHOSTEM ALANA
-    if (!mysql_real_connect(conn, "localhost",
-                            "root", "root", "robozone", 0, "/Applications/MAMP/tmp/mysql/mysql.sock", 0)) {
-        fprintf(stderr, "%s\n", mysql_error(conn));
-        exit(1);
-    }
-
-    char queryString[2048];
-    char filename[256];
+    // bind(int fd, struct sockaddr *local_addr, socklen_t addr_length)
+    // bind() passes file descriptor, the address structure,
+    // and the length of the address structure
+    // This bind() call will bind  the socket to the current IP address on port, portno
+    if (bind(sockfd, (struct sockaddr *) &serv_addr,
+             sizeof(serv_addr)) < 0)
+        error("ERROR on binding");
     
-    memset(queryString, 0, 2048);
-    memset(filename,0, 256);
+    // This listen() call tells the socket to listen to the incoming connections.
+    // The listen() function places all incoming connection into a backlog queue
+    // until accept() call accepts the connection.
+    // Here, we set the maximum size for the backlog queue to 5.
+    listen(sockfd,5);
     
-    sprintf(queryString, "SELECT `script_data`, `script_size` FROM `Scripts` where `script_id` =  '%d';", script_id);
+    // The accept() call actually accepts an incoming connection
+    clilen = sizeof(cli_addr);
     
-    if (mysql_query(conn, queryString)) {
-        fprintf(stderr, "BLAD PODCZAS SELECT: %s\n", mysql_error(conn));
-        exit(1);
-    }
-    
-    printf("Polaczono po raz pierwszy z baza\n");
-    
-    res = mysql_store_result(conn);
-    
-    row = mysql_fetch_row(res);
-    
-    file = fopen(nazwaP, "wb");
-    
-    unsigned long *lengths = mysql_fetch_lengths(res);
-
-    n = fwrite(row[0], lengths[0], 1, file);
-    
-    if (ferror(file))
+    // This accept() function will write the connecting client's address info
+    // into the the address structure and the size of that structure is clilen.
+    // The accept() returns a new socket file descriptor for the accepted connection.
+    // So, the original socket file descriptor can continue to be used
+    // for accepting new connections while the new socker file descriptor is used for
+    // communicating with the connected client.
+    while(1)
     {
-        fprintf(stderr, "ERROR writing to file\n");
-        mysql_free_result(res);
+        newsockfd = accept(sockfd,
+                           (struct sockaddr *) &cli_addr, &clilen);
+        if (newsockfd < 0)
+            error("ERROR on accept");
+        
+        printf("server: got connection from %s port %d\n",
+               inet_ntoa(cli_addr.sin_addr), ntohs(cli_addr.sin_port));
+        
+        
+        // This send() function sends the 13 bytes of the string to the new socket
+        //send(newsockfd, "Hello, world!\n", 13, 0);
+        
+        bzero(buffer,256);
+        
+        int script_id;
+        int user_id;
+        
+        n = read(newsockfd,&script_id, sizeof(int));
+        if (n < 0) error("ERROR reading from socket // scriptid");
+        printf("SCRIPT ID: %d\n", script_id);
+        
+        n = read(newsockfd,&user_id, sizeof(int));
+        if (n < 0) error("ERROR reading from socket // userid");
+        printf("USER ID: %d\n", user_id);
+        
+        char nazwaP[2048];
+        memset(nazwaP, 0, 2048);
+        
+        n = read(newsockfd,nazwaP, sizeof(nazwaP));
+        if (n < 0) error("ERROR reading from socket // name");
+        printf("NAZWA PLIKU: %s\n", nazwaP);
+        
+        
+        MYSQL *conn;
+        MYSQL_RES *res;
+        MYSQL_ROW row;
+        FILE *file;
+        conn = mysql_init(NULL);
+        //PRZEDOSTATNI PARAMETR DO ZMIANY NA NULL PODCZAS ODPALANIA POZA LOCALHOSTEM ALANA
+        if (!mysql_real_connect(conn, "localhost",
+                                "root", "root", "robozone", 0, "/Applications/MAMP/tmp/mysql/mysql.sock", 0)) {
+            fprintf(stderr, "%s\n", mysql_error(conn));
+            exit(1);
+        }
+        
+        char queryString[2048];
+        char filename[256];
+        
+        memset(queryString, 0, 2048);
+        memset(filename,0, 256);
+        
+        sprintf(queryString, "SELECT `script_data`, `script_size` FROM `Scripts` where `script_id` =  '%d';", script_id);
+        
+        if (mysql_query(conn, queryString)) {
+            fprintf(stderr, "BLAD PODCZAS SELECT: %s\n", mysql_error(conn));
+            exit(1);
+        }
+        
+        printf("Polaczono po raz pierwszy z baza\n");
+        
+        res = mysql_store_result(conn);
+        
+        row = mysql_fetch_row(res);
+        
         mysql_close(conn);
         
-        exit(1);
+        file = fopen(nazwaP, "wb");
+        
+        unsigned long *lengths = mysql_fetch_lengths(res);
+        
+        n = fwrite(row[0], lengths[0], 1, file);
+        
+        int compare = atoi(row[1]);
+        
+        if (ferror(file)  && n!=compare)
+        {
+            fprintf(stderr, "ERROR writing to file\n");
+            mysql_free_result(res);
+            mysql_close(conn);
+            
+            exit(1);
+        }
+        
+        printf("ZAPISANO DANE DO PLIKU: %s\n", nazwaP);
+        
+        chmod(nazwaP, S_IRWXU|S_IRGRP|S_IXGRP|S_IROTH);
+        fclose(file);
+        
+        char polecenie[2048];
+        memset(polecenie,0, 2048);
+        sprintf(polecenie,"./%s", nazwaP);
+        printf("POLECENIE: %s\n", polecenie);
+        
+        pid_t child_pid;
+        int status;
+        
+        if( (child_pid=fork()) == 0 ){
+            char script_id_str[12];
+            sprintf(script_id_str, "%d", script_id);
+            execlp(polecenie, polecenie, script_id_str , NULL);
+        }
+        else{
+            waitpid(child_pid,&status,0);
+        }
+        
+        conn = mysql_init(NULL);
+        //PRZEDOSTATNI PARAMETR DO ZMIANY NA NULL PODCZAS ODPALANIA POZA LOCALHOSTEM ALANA
+        if (!mysql_real_connect(conn, "localhost",
+                                "root", "root", "robozone", 0, "/Applications/MAMP/tmp/mysql/mysql.sock", 0)) {
+            fprintf(stderr, "%s\n", mysql_error(conn));
+            exit(1);
+        }
+        printf("Polaczono po raz drugi z baza\n");
+        time_t t = time(0);
+        struct tm *now = localtime(&t);
+        
+        char datetime[19];
+        
+        sprintf(datetime, "%d-%d-%d %d:%d:%d", now->tm_year+1900, now->tm_mon+1, now->tm_mday, now->tm_hour, now->tm_min, now->tm_sec);
+        
+        char filebuffer[1024];
+        memset(filename,0, 256);
+        sprintf(filename, "%d.txt", script_id);
+        file = fopen(filename, "rt");
+        
+        if(file){
+            n = fread(filebuffer,1, sizeof(filebuffer), file);
+            if(n < 0) { error("ERROR reading from file"); }
+        }
+        
+        fclose(file);
+        
+        memset(queryString, 0, 2048);
+        
+        char ip[15];
+        memset(ip, 0, 15);
+        sprintf(ip, "%s", inet_ntoa(cli_addr.sin_addr));
+        
+        sprintf(queryString, "INSERT INTO `History`(`u_id`, `s_id`, `exec_date`, `log`, `ip`) VALUES('%d', '%d', '%s', '%s', '%s')", user_id, script_id, datetime, filebuffer, ip);
+        
+        if (mysql_query(conn, queryString)) {
+            fprintf(stderr, "BLAD PODCZAS INSERT: %s\n", mysql_error(conn));
+            exit(1);
+        }
+        mysql_close(conn);
+        
+        close(newsockfd);
+        
+        printf("ZAKONCZONO OBSLUGE: %s\n",inet_ntoa(cli_addr.sin_addr));
     }
-    
-    mysql_close(conn);
-    printf("ZAPISANO DANE DO PLIKU: %s\n", nazwaP);
-
-    chmod(nazwaP, S_IRWXU|S_IRGRP|S_IXGRP|S_IROTH);
-    fclose(file);
-    
-     char polecenie[2048];
-     memset(polecenie,0, 2048);
-     sprintf(polecenie,"./%s", nazwaP);
-     printf("POLECENIE: %s\n", polecenie);
-
-     pid_t child_pid;
-     int status;
-
-     if( (child_pid=fork()) == 0 ){
-         char script_id_str[12];
-         sprintf(script_id_str, "%d", script_id);
-         execlp(polecenie, polecenie, script_id_str , NULL);
-     }
-	else{
-		waitpid(child_pid,&status,0);
- 	}
-    
-    conn = mysql_init(NULL);
-    //PRZEDOSTATNI PARAMETR DO ZMIANY NA NULL PODCZAS ODPALANIA POZA LOCALHOSTEM ALANA
-    if (!mysql_real_connect(conn, "localhost",
-                            "root", "root", "robozone", 0, "/Applications/MAMP/tmp/mysql/mysql.sock", 0)) {
-        fprintf(stderr, "%s\n", mysql_error(conn));
-        exit(1);
-    }
-    printf("Polaczono po raz drugi z baza\n");
-    time_t t = time(0);
-    struct tm *now = localtime(&t);
-    
-    char datetime[19];
-    
-    sprintf(datetime, "%d-%d-%d %d:%d:%d", now->tm_year+1900, now->tm_mon+1, now->tm_mday, now->tm_hour, now->tm_min, now->tm_sec);
-    
-    char filebuffer[1024];
-    memset(filename,0, 256);
-    sprintf(filename, "%d.txt", script_id);
-    file = fopen(filename, "rt");
-    
-    if(file){
-        n = fread(filebuffer,1, sizeof(filebuffer), file);
-        if(n < 0) { error("ERROR reading from file"); }
-    }
-    
-    fclose(file);
-    
-    memset(queryString, 0, 2048);
-    
-    sprintf(queryString, "INSERT INTO `History`(`u_id`, `s_id`, `exec_date`, `log`) VALUES('%d', '%d', '%s', '%s')", user_id, script_id, datetime, filebuffer);
-    
-    if (mysql_query(conn, queryString)) {
-        fprintf(stderr, "BLAD PODCZAS INSERT: %s\n", mysql_error(conn));
-        exit(1);
-    }
-    mysql_close(conn);
-    
-    close(newsockfd);
-    
-    printf("ZAKONCZONO OBSLUGE: %s\n",inet_ntoa(cli_addr.sin_addr));
-
-
-}
-close(sockfd);
-     return 0;
+    close(sockfd);
+    return 0;
 }

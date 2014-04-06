@@ -36,6 +36,7 @@ create table History
 	s_id INT NOT NULL,
 	exec_date DATETIME NOT NULL,
 	log TEXT NOT NULL,
+	ip VARCHAR(15) NOT NULL,
 	FOREIGN KEY(u_id) REFERENCES Users(user_id),
 	FOREIGN KEY(s_id) REFERENCES Scripts(script_id)
 );
