@@ -1,10 +1,11 @@
 <?php
  
 // definiujemy dane do połączenia z bazą danych
-define('DBHOST', 'mysql.cba.pl');
+define('DBHOST', 'mysql.wmi.amu.edu.pl');
 define('DBUSER', 'robozone');
-define('DBPASS', 'picode');
-define('DBNAME', 'robozone_cba_pl');
+define('DBPASS', 'ereemellienters');
+define('DBNAME', 'robozone');
+ 
  
 function db_connect() {
     // połączenie z mysql

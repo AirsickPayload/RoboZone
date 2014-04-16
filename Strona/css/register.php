@@ -51,65 +51,105 @@ if(!$_SESSION['logged']) {
                 // i wykonujemy zapytanie na dodanie usera
                 mysql_query("INSERT INTO `Users` (`name`, `lastname`,`login`,`pass`,`address`,`university`) VALUES ('{$_POST['imie']}', '{$_POST['nazwisko']}', '{$_POST['login']}', '{$_POST['password']}', '{$_POST['email']}', '{$_POST['uczelnia']}')");
                 echo '<p>Zostałeś poprawnie zarejestrowany! Możesz się teraz <a href="logowanie.php">zalogować</a>. Przeglądarka przekieruje automatycznie za 5 sekund.</p>';
-				?><meta http-equiv="refresh" content="5; URL=form_log.html"><?php
+				?><meta http-equiv="refresh" content="5; URL=index.html"><?php
 			}
         }
     }
 	error_reporting(0); 				//UWAGA TYLKO DLA TESTU !!!!!!!
 	//Jak nie jest zalogowany, zacznij od siły hasła
-	echo '<form method="post" action="register.php">
-			<p>
-			Sprawdź siłę hasła:
-			<input type="password" name="haslo">
-			<input type="submit" value="Zatwierdź">
-			</p>
-			</form>		
-		';
+	}
+	?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html>
+<head>
+<!--META-->
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<!--STYLESHEETS-->
+<link href="css/style.css" rel="stylesheet" type="text/css" />
+<!--SCRIPTS-->
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.2.6/jquery.min.js"></script>
+
+
+</head>
+<body id="lic">
+
+<!--WRAPPER-->
+<div id="wrapper">
+
+<!--LOGIN FORM-->
+<form name="login-form" class="login-form" method="post" action="register.php">
+
+	<!--HEADER-->
+    <div class="header">
+    <!--TITLE-->Zarejestruj się<!--END TITLE-->
+    </div>
+    <!--END HEADER-->
 	
-	echo "Obecna siła hasła w skali od 1 - 10 wynosi: ".testPassword($_POST['haslo']);
+	<!--CONTENT-->
+    <div class="content">
 	
-    // wyświetlamy formularz do rejestracji
-    echo '<form method="post" action="register.php">
-        <p>
-            Imię:<br>
-            <input type="text"  name="imie">
-        </p>
-        <p>
-            Nazwisko:<br>
-            <input type="text"  name="nazwisko">
-        </p>
-        <p>
-            Nazwa użytkownika(login):<br>
-            <input type="text"  name="login">
-        </p>
-        <p>
-            Hasło:<br>
-            <input type="password"  name="password">
-        </p>
-		<p>
-            Powtórz hasło:<br>
-            <input type="password"  name="password2">
-        </p>
-		<p>
-            Adres e-mail:<br>
-            <input type="text"  name="email">
-        </p>
-		<p>
-            Uczelnia:<br>
-            <input type="text"  name="uczelnia">
-        </p>
-        <p>
-            <input type="submit" value="Zarejestruj">
-			<input type="text" name="captcha_code" size="10" maxlength="6" />
-			<a href="#" onclick="document.getElementById(\'captcha\').src = \'/securimage/securimage_show.php?\' + Math.random(); return false">[ Zmień obrazek ]</a>
-        </p>
-		
-		<img id="captcha" src="/securimage/securimage_show.php" alt="CAPTCHA Image" />
-    </form>';
-} else {
-    echo '<p>Jesteś już zalogowany, więc nie możesz stworzyć nowego konta.</p>
-        <p>[<a href="index.php">Powrót</a>]</p>';
-}
+	<!--imie--><input name="imie" type="text" class="input username" value="Imie" onfocus="this.value=''" />
+    <!--nazwisko--><input name="nazwisko" type="text" class="input username" value="Nazwisko" onfocus="this.value=''" /> 
+	<!--username--><input name="login" id="login" type="text" class="input username" value="Nazwa Użytkownika" onfocus="this.value=''" />
+	<div class="input username>
+	<input onfocus="return makeItPassword()" name="pass_word" type="text" id="password" class="testresult" value="Wpisz haslo" onfocus="this.value=''"/>
+	<div>
+    <!--haslo2--><input name="password2" type="password" class="input username" value="Powtórz haslo" onfocus="this.value=''" />
+	<!--e-mail--><input name="email" type="text" class="input username" value="E-mail" onfocus="this.value=''" />
+    <!--uczelnia--><input name="uczelnia" type="text" class="input username" value="Uczelnia" onfocus="this.value=''" />
+	<!--uczelnia--><input name="captcha_code" type="text" class="input username" value="Przepisz kod z obrazka:" onfocus="this.value=''" />
+	<a href="#" onclick="document.getElementById(\'captcha\').src = \'/securimage/securimage_show.php?\' + Math.random(); return false">[Zmień obrazek]</a>
+
+
+	</div>
+	<img id="captcha" src="/securimage/securimage_show.php" alt="CAPTCHA Image" />
+
+    <!--END CONTENT-->
+    <!--FOOTER-->
+    <div class="footer">
+    <!--REGISTER BUTTON--><input type="submit" name="submit" value="Zarejestruj" class="register" /><!--END REGISTER BUTTON-->
+	</form>
+	
+    </div>
+    <!--END FOOTER-->
+
+
+<!--END LOGIN FORM-->
+</div>
+
+<!--END WRAPPER-->
+
+<!--GRADIENT--><div class="gradient"></div><!--END GRADIENT-->
+<script src="http://code.jquery.com/jquery-latest.min.js"></script>
+ <script src="script.js"></script>	
+ <script>
+  $(document).ready( function() {
+
+	$(".testresult").passStrength({
+	 userid:	"#login"
+	});
+				
+ $(".password_adv").passStrength({
+					shortPass: 		"top_shortPass",
+					badPass:		"top_badPass",
+					goodPass:		"top_goodPass",
+					strongPass:		"top_strongPass",
+					baseStyle:		"top_testresult",
+					userid:			"#user_id_adv",
+					messageloc:		0
+				});
+			});
+
+      function makeItPassword()
+      {
+         document.getElementById("password")
+            .innerHTML = "<input id=\"password\" name=\"pass_word\" type=\"password\" class=\"testresult\"/>";
+         document.getElementById("password").focus();
+      }
  
+ </script>
+</body>
+</html>
+<? 
 db_close();
 ?>

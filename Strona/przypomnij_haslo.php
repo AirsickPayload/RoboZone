@@ -113,7 +113,7 @@ Ta informacja została zaszyfrowana w naszej bazie danych
 
 E-mail wygenerowany automatycznie."; 
         echo "HASLO WYSLANE/ZMIENIONE - BRAK DEMONA POCZTY ! - TYLKO TEST PRZEKIEROWANIA (za 5 sek. na strone log.)";
-		?><meta http-equiv="refresh" content="5; URL=form_log.html"><?php
+		?><meta http-equiv="refresh" content="5; URL=index.html"><?php
 		exit;
           if(!mail($podanyemail, $subject, $message,  "FROM: robozone1 <robozone1@gmail.com>")){
              die ("Wysłanie e-mail nie powiodło się, skontaktuj się z administratorem strony! ($site_email)"); 
