@@ -91,19 +91,29 @@ int main(int argc, char *argv[])
         
         int script_id;
         int user_id;
+        int strlen;
         
         n = read(newsockfd,&script_id, sizeof(int));
         if (n < 0) error("ERROR reading from socket // scriptid");
         printf("SCRIPT ID: %d\n", script_id);
         
-        n = read(newsockfd,&user_id, sizeof(int));
-        if (n < 0) error("ERROR reading from socket // userid");
-        printf("USER ID: %d\n", user_id);
+        n = read(newsockfd,&strlen, sizeof(int));
+        if (n < 0) error("ERROR reading from socket // String length 1");
+        
+        char login[512];
+        memset(login, 0, 512);
+        
+        n = read(newsockfd, login, strlen);
+        if (n < 0) error("ERROR reading from socket // login");
+        printf("LOGIN: %s\n", login);
         
         char nazwaP[2048];
         memset(nazwaP, 0, 2048);
         
-        n = read(newsockfd,nazwaP, sizeof(nazwaP));
+        n = read(newsockfd,&strlen, sizeof(int));
+        if (n < 0) error("ERROR reading from socket // String length 2");
+        
+        n = read(newsockfd,nazwaP, strlen);
         if (n < 0) error("ERROR reading from socket // name");
         printf("NAZWA PLIKU: %s\n", nazwaP);
         
@@ -129,7 +139,7 @@ int main(int argc, char *argv[])
         sprintf(queryString, "SELECT `script_data`, `script_size` FROM `Scripts` where `script_id` =  '%d';", script_id);
         
         if (mysql_query(conn, queryString)) {
-            fprintf(stderr, "BLAD PODCZAS SELECT: %s\n", mysql_error(conn));
+            fprintf(stderr, "BLAD PODCZAS SELECT DANYCH PLIKU: %s\n", mysql_error(conn));
             exit(1);
         }
         
@@ -166,7 +176,6 @@ int main(int argc, char *argv[])
         char polecenie[2048];
         memset(polecenie,0, 2048);
         sprintf(polecenie,"./%s", nazwaP);
-        printf("POLECENIE: %s\n", polecenie);
         
         pid_t child_pid;
         int status;
@@ -209,6 +218,20 @@ int main(int argc, char *argv[])
         
         memset(queryString, 0, 2048);
         
+        sprintf(queryString, "SELECT `user_id` FROM `Users` where `login` = '%s';", login);
+        
+        if (mysql_query(conn, queryString)) {
+            fprintf(stderr, "BLAD PODCZAS SELECT USER ID: %s\n", mysql_error(conn));
+            exit(1);
+        }
+        
+        res = mysql_store_result(conn);
+        
+        row = mysql_fetch_row(res);
+        
+        user_id = atoi(row[0]);
+        printf("USER ID: %d\n", user_id);
+        
         char ip[15];
         memset(ip, 0, 15);
         sprintf(ip, "%s", inet_ntoa(cli_addr.sin_addr));
@@ -218,6 +241,9 @@ int main(int argc, char *argv[])
         if (mysql_query(conn, queryString)) {
             fprintf(stderr, "BLAD PODCZAS INSERT: %s\n", mysql_error(conn));
             exit(1);
+        }
+        else{
+            printf("INSERT ZAKONCZYL SIE POWODZENIEM");
         }
         mysql_close(conn);
         
