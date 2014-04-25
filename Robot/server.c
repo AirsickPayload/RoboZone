@@ -26,14 +26,14 @@ int main(int argc, char *argv[])
     struct sockaddr_in serv_addr, cli_addr;
     int n;
     if (argc < 2) {
-        fprintf(stderr,"ERROR, no port provided\n");
+        fprintf(stderr,"BLAD, NUMER PORTU NIE ZOSTAL PODANY\n");
         exit(1);
     }
     // create a socket
     // socket(int domain, int type, int protocol)
     sockfd =  socket(AF_INET, SOCK_STREAM, 0);
     if (sockfd < 0)
-        error("ERROR opening socket");
+        error("BLAD PODCZAS OTWIERANIA SOCKETU\n");
     
     // clear address structure
     bzero((char *) &serv_addr, sizeof(serv_addr));
@@ -56,7 +56,7 @@ int main(int argc, char *argv[])
     // This bind() call will bind  the socket to the current IP address on port, portno
     if (bind(sockfd, (struct sockaddr *) &serv_addr,
              sizeof(serv_addr)) < 0)
-        error("ERROR on binding");
+        error("BLAD - bind()");
     
     // This listen() call tells the socket to listen to the incoming connections.
     // The listen() function places all incoming connection into a backlog queue
@@ -78,15 +78,14 @@ int main(int argc, char *argv[])
         newsockfd = accept(sockfd,
                            (struct sockaddr *) &cli_addr, &clilen);
         if (newsockfd < 0)
-            error("ERROR on accept");
+            error("BLAD - accept()");
         
         printf("server: got connection from %s port %d\n",
                inet_ntoa(cli_addr.sin_addr), ntohs(cli_addr.sin_port));
         
-        
-        // This send() function sends the 13 bytes of the string to the new socket
-        //send(newsockfd, "Hello, world!\n", 13, 0);
-        
+		
+		/* FAZA ODBIORU DANYCH: ID SKRYPTU, ID UZYTKOWNIKA, LOGIN UZYTKOWNIKA */
+			   
         bzero(buffer,256);
         
         int script_id;
@@ -94,30 +93,31 @@ int main(int argc, char *argv[])
         int strlen;
         
         n = read(newsockfd,&script_id, sizeof(int));
-        if (n < 0) error("ERROR reading from socket // scriptid");
+        if (n < 0) error("Blad podczas czytania z socketu // scriptid");
         printf("SCRIPT ID: %d\n", script_id);
         
         n = read(newsockfd,&strlen, sizeof(int));
-        if (n < 0) error("ERROR reading from socket // String length 1");
+        if (n < 0) error("Blad podczas czytania z socketu // Login string length");
         
         char login[512];
         memset(login, 0, 512);
         
         n = read(newsockfd, login, strlen);
-        if (n < 0) error("ERROR reading from socket // login");
+        if (n < 0) error("Blad podczas czytania z socketu // Login string");
         printf("LOGIN: %s\n", login);
         
         char nazwaP[2048];
         memset(nazwaP, 0, 2048);
         
         n = read(newsockfd,&strlen, sizeof(int));
-        if (n < 0) error("ERROR reading from socket // String length 2");
+        if (n < 0) error("Blad podczas czytania z socketu // Filename string length");
         
         n = read(newsockfd,nazwaP, strlen);
-        if (n < 0) error("ERROR reading from socket // name");
+        if (n < 0) error("Blad podczas czytania z socketu // Filename string");
         printf("NAZWA PLIKU: %s\n", nazwaP);
         
-        
+        /* FAZA POBRANIA DANYCH SKRYPTU, ZAPISANIA DO PLIKU */
+		
         MYSQL *conn;
         MYSQL_RES *res;
         MYSQL_ROW row;
@@ -146,9 +146,7 @@ int main(int argc, char *argv[])
         printf("Polaczono po raz pierwszy z baza\n");
         
         res = mysql_store_result(conn);
-        
         row = mysql_fetch_row(res);
-        
         mysql_close(conn);
         
         file = fopen(nazwaP, "wb");
@@ -161,18 +159,22 @@ int main(int argc, char *argv[])
         
         if (ferror(file)  && n!=compare)
         {
-            fprintf(stderr, "ERROR writing to file\n");
+            fprintf(stderr, "Blad podczas zapisywania do pliku!\n");
             mysql_free_result(res);
-            mysql_close(conn);
             
             exit(1);
         }
         
+		mysql_free_result(res);
+		
         printf("ZAPISANO DANE DO PLIKU: %s\n", nazwaP);
         
         chmod(nazwaP, S_IRWXU|S_IRGRP|S_IXGRP|S_IROTH);
         fclose(file);
         
+		
+		/* FAZA URUCHOMIENIA SKRYPTU */
+		
         char polecenie[2048];
         memset(polecenie,0, 2048);
         sprintf(polecenie,"./%s", nazwaP);
@@ -188,6 +190,8 @@ int main(int argc, char *argv[])
         else{
             waitpid(child_pid,&status,0);
         }
+		
+		/* FAZA ODESLANIA WYNIKU DO BAZY DANYCH */
         
         conn = mysql_init(NULL);
         //PRZEDOSTATNI PARAMETR DO ZMIANY NA NULL PODCZAS ODPALANIA POZA LOCALHOSTEM ALANA
@@ -204,14 +208,14 @@ int main(int argc, char *argv[])
         
         sprintf(datetime, "%d-%d-%d %d:%d:%d", now->tm_year+1900, now->tm_mon+1, now->tm_mday, now->tm_hour, now->tm_min, now->tm_sec);
         
-        char filebuffer[1024];
+        char filebuffer[1024*1024];
         memset(filename,0, 256);
         sprintf(filename, "%d.txt", script_id);
         file = fopen(filename, "rt");
         
         if(file){
             n = fread(filebuffer,1, sizeof(filebuffer), file);
-            if(n < 0) { error("ERROR reading from file"); }
+            if(n < 0) { error("Blad podczas czytania z pliku!"); exit(1); }
         }
         
         fclose(file);
