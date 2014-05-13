@@ -38,7 +38,7 @@ int main(int argc, char *argv[])
     bzero((char *) &serv_addr, sizeof(serv_addr));
 
     portno = atoi(argv[1]);
-    
+
     serv_addr.sin_family = AF_INET;
 
     serv_addr.sin_addr.s_addr = INADDR_ANY;
@@ -104,14 +104,14 @@ int main(int argc, char *argv[])
         FILE *file;
         conn = mysql_init(NULL);
         //PRZEDOSTATNI PARAMETR DO ZMIANY NA NULL PODCZAS ODPALANIA POZA LOCALHOSTEM ALANA
-		/* 
+		/*
 		if (!mysql_real_connect(conn, "localhost",
                                 "root", "root", "robozone", 0, "/Applications/MAMP/tmp/mysql/mysql.sock", 0)) {
             fprintf(stderr, "%s\n", mysql_error(conn));
             exit(1);
         }
 		*/
-		
+
         if (!mysql_real_connect(conn, "mysql.wmi.amu.edu.pl",
                                 "robozone", "ereemellienters", "robozone", 0, NULL, 0)) {
             fprintf(stderr, "%s\n", mysql_error(conn));
@@ -119,14 +119,14 @@ int main(int argc, char *argv[])
         }
 
 		char filebuffer[1024*1024];
-        char queryString[2048];
+    char queryString[2048];
 		char polecenie[2048];
-        char filename[256];
+    char filename[256];
 		char datetime[19];
 		char ip[15];
 		char script_id_str[12];
-        pid_t child_pid;
-        int status;
+    pid_t child_pid;
+    int status;
 
         memset(queryString, 0, 2048);
         memset(filename,0, 256);
@@ -157,18 +157,18 @@ int main(int argc, char *argv[])
             exit(1);
         }
 
-		mysql_free_result(res);
+		    mysql_free_result(res);
 
         printf("ZAPISANO DANE DO PLIKU: %s\n", nazwaP);
 
         chmod(nazwaP, S_IRWXU|S_IRGRP|S_IXGRP|S_IROTH);
         fclose(file);
-		
+
         memset(polecenie,0, 2048);
         sprintf(polecenie,"./%s", nazwaP);
-		
+
 		/* FAZA PRZYGOTOWANIA DANYCH, POTRZEBNYCH DO WYKONANIA INSERTA DO TABELI HISTORY */
-		
+
         time_t t = time(0);
         struct tm *now = localtime(&t);
 
@@ -192,25 +192,25 @@ int main(int argc, char *argv[])
 
         memset(ip, 0, 15);
         sprintf(ip, "%s", inet_ntoa(cli_addr.sin_addr));
-		  
+
 		/* FAZA SPRAWDZENIA POPRAWNOSCI SKRYPTU */
-		
+
         if( (child_pid=fork()) == 0 ){
             execlp("python", "python", "-m", "py_compile", polecenie, NULL);
         }
         else{
             waitpid(child_pid,&status,0);
         }
-		
+
 		char filename2[2048];
-		
+
 		strcpy(filename2, nazwaP);
-		
+
 		strcat(filename2, "c");
-		
+
 		file = fopen(filename2, "rt");
-		
-		if( file == NULL ) { 
+
+		if( file == NULL ) {
 			printf("Błąd podczas kompilacji.\n");
 			memset(queryString, 0, 2048);
 
@@ -264,7 +264,7 @@ int main(int argc, char *argv[])
 
         fclose(file);
 
-		memset(queryString, 0, 2048);
+		    memset(queryString, 0, 2048);
 
         sprintf(queryString, "INSERT INTO `History`(`u_id`, `s_id`, `exec_date`, `log`, `ip`) VALUES('%d', '%d', '%s', '%s', '%s')", user_id, script_id, datetime, filebuffer, ip);
 
@@ -278,9 +278,9 @@ int main(int argc, char *argv[])
         mysql_close(conn);
 
         close(newsockfd);
-		
+
         if( (child_pid=fork()) == 0 ){
-			memset(filename,0,256);
+			      memset(filename,0,256);
             sprintf(filename, "%d.txt", script_id);
             execlp("sudo", "sudo", "rm", filename, NULL);
         }
@@ -295,8 +295,8 @@ int main(int argc, char *argv[])
         else{
             waitpid(child_pid,&status,0);
         }
-		
-		
+
+
         printf("ZAKONCZONO OBSLUGE: %s\n",inet_ntoa(cli_addr.sin_addr));
     }
     close(sockfd);
